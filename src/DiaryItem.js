@@ -1,16 +1,32 @@
-const DiaryItem =({author, content, created_date, emotion, id})=> {
-    return (
+const DiaryItem = ({
+  onDelete,
+  id,
+  author,
+  content,
+  emotion,
+  created_date,
+}) => {
+  return (
     <div className="DiaryItem">
       <div className="info">
-        <span>Write: {author} | Emotion Score: {emotion} </span>
+        <span className="author_info">
+          | 작성자 : {author} | 감정점수 : {emotion} |
+        </span>
         <br />
-        <span className="date">{new Date(created_date).toDateString()} </span>
-        </div>
-  
-        <div className="content">{content} </div>
-  
-       </div>
-  )     
-  }
-  
-  export default DiaryItem;
+        <span className="date">{new Date(created_date).toLocaleString()}</span>
+      </div>
+      <div className="content">{content}</div>
+      <button
+        onClick={() => {
+          if (window.confirm(`${id}번째 일기를 정말 삭제하시겠습니까?`)) {
+            onDelete(id);
+          }
+        }}
+      >
+        Erase the Content!!!
+      </button>
+    </div>
+  );
+};
+
+export default DiaryItem;

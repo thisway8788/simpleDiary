@@ -1,19 +1,19 @@
 import { useRef, useState } from "react";
 
-const DiaryEditor = () => {
+const DiaryEditor = ({ onCreate }) => {
   const authorInput = useRef();
   const contentInput = useRef();
 
   const [state, setState] = useState({
     author: "",
     content: "",
-    emotion: 1
+    emotion: 1,
   });
 
   const handleChangeState = (e) => {
     setState({
       ...state,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -28,8 +28,13 @@ const DiaryEditor = () => {
       return;
     }
 
-    console.log(state);
-    alert("저장 성공!");
+    onCreate(state.author, state.content, state.emotion);
+    alert("저장 성공");
+    setState({
+      author: "",
+      content: "",
+      emotion: 1,
+    });
   };
 
   return (
