@@ -1,10 +1,40 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useReducer, useRef, useEffect, useMemo, useCallback } from "react";
 import "./App.css";
 import DiaryEditor from "./DiaryEditor";
 import DiaryList from "./DiaryList";
 
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "INIT": {
+      return action.data;
+    }
+
+    case "CREATE": {
+      const created_date = new Date().getTime();
+      const newItem = {
+        ...action.data,
+        created_date,
+      };
+      return [newItem, ...state];
+    }
+
+    case "REMOVE": {
+      return state.filter((it) => it.id !== action.targetId);
+    }
+    case "EDIT": {
+      return state.map((it) =>
+        it.id === action.targetId ? { ...it, content: action.newContent } : it
+      );
+    }
+    default:
+      return state;
+  }
+};
+
 const App = () => {
-  const [data, setData] = useState([]);
+  // const [data, setData] = useState([]);
+
+  const [data, dispatch] = useReducer(reducer, []);
 
   const dataId = useRef(0);
 
@@ -24,47 +54,56 @@ const App = () => {
         id: dataId.current++,
       };
     });
-    setData(initData);
+    // setData(initData);
+    dispatch({ type: "INIT", data: initData });
   };
 
   useEffect(() => {
     getData();
   }, []);
 
-  const onCreate = (author, content, emotion) => {
-    const created_date = new Date().getTime();
-    const newItem = {
-      author,
-      content,
-      emotion,
-      created_date,
-      id: dataId.current,
-    };
-    dataId.current += 1;
-    setData([newItem, ...data]);
-  };
+  // 여기서 useMemo느 쓰면안됨 함수를 반환하는게 아니고 값을 반환하기때문
+  // onCreate에서는 값이아닌 함수를 반환해야함
 
-  const onRemove = (targetId) => {
-    const newDiaryList = data.filter((it) => it.id !== targetId);
-    setData(newDiaryList);
-  };
+  const onCreate = useCallback((author, content, emotion) => {
+    dispatch({
+      type: "CREATE",
+      data: { author, content, emotion, id: dataId.current },
+    });
+    // const created_date = new Date().getTime();
+    // const newItem = {
+    //   author,
+    //   content,
+    //   emotion,
+    //   created_date,
+    //   id: dataId.current,
+    // };
+    dataId.current += 1;
+    // setData부분을 이렇게 해주면 제대로 작동한다
+    // setData((data) => [newItem, ...data]);
+  }, []);
+
+  const onRemove = useCallback((targetId) => {
+    dispatch({ type: "REMOVE", targetId });
+    // setData((data) => data.filter((it) => it.id !== targetId));
+  }, []);
 
   // setData를 통해서 어떤 값을 전달할것 이다 그리고 변경시키는 값을 어떻게 만들까? 그것은 onModify함수는
   // 어떤 특정 일기 데이타를 수정하는 함수이다 그래서 targetId가 갖는 일기 데이타를 배열에서 수정할것 이기때문에
   // 원본 데이타 배열에 map을 이용해서 모든 곳을 순회하고 배열을 만들어 setData에 넣어준다
   // 그다음부터가 it.id이다
-  const onModify = (targetId, newContent) => {
-    setData(
-      data.map((it) =>
-        it.id === targetId ? { ...it, content: newContent } : it
-      )
-    );
-  };
+  const onModify = useCallback((targetId, newContent) => {
+    dispatch({ type: "EDIT", targetId, newContent });
+    // setData((data) =>
+    //   data.map((it) =>
+    //     it.id === targetId ? { ...it, content: newContent } : it
+    //   )
+    // );
+  }, []);
 
   // data.length가 변화하지 않는이상 getDiaryAnalysis는 리렌더링 안된다
+  // 값을 반환하는거라 가능
   const getDiaryAnalysis = useMemo(() => {
-    console.log("일기 분석 시작");
-
     const goodCount = data.filter((it) => it.emotion >= 3).length;
     const badCount = data.length - goodCount;
     const goodRatio = (goodCount / data.length) * 100;
@@ -72,6 +111,7 @@ const App = () => {
   }, [data.length]);
 
   // 함수가 아니라 값으로 사용해야 하기 때문에 getDiraryAnalysis만한다
+  // 함수가 아닌 값으로 반환한다 그래서useMemo가능 값 아닌 콜백 함수를 반환하는건 usecallback
 
   const { goodCount, badCount, goodRatio } = getDiaryAnalysis;
 
