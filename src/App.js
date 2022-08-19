@@ -1,4 +1,10 @@
-import { useReducer, useRef, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useReducer,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import "./App.css";
 import DiaryEditor from "./DiaryEditor";
 import DiaryList from "./DiaryList";
@@ -30,6 +36,9 @@ const reducer = (state, action) => {
       return state;
   }
 };
+
+export const DiaryStateContext = React.createContext();
+export const DiaryDispatchContext = React.createContext();
 
 const App = () => {
   // const [data, setData] = useState([]);
@@ -101,6 +110,10 @@ const App = () => {
     // );
   }, []);
 
+  const memoizedDispatches = useMemo(() => {
+    return { onCreate, onRemove, onModify };
+  }, []);
+
   // data.length가 변화하지 않는이상 getDiaryAnalysis는 리렌더링 안된다
   // 값을 반환하는거라 가능
   const getDiaryAnalysis = useMemo(() => {
@@ -116,14 +129,18 @@ const App = () => {
   const { goodCount, badCount, goodRatio } = getDiaryAnalysis;
 
   return (
-    <div className="App">
-      <DiaryEditor onCreate={onCreate} />
-      <div>전체일기: {data.length}</div>
-      <div>기분 좋은 일기 개수: {goodCount}</div>
-      <div>기분이 나쁜 일기 개수: {badCount}</div>
-      <div>기분이 좋은 일기 비율: {goodRatio}</div>
-      <DiaryList onModify={onModify} onRemove={onRemove} diaryList={data} />
-    </div>
+    <DiaryStateContext.Provider value={data}>
+      <DiaryDispatchContext.Provider value={memoizedDispatches}>
+        <div className="App">
+          <DiaryEditor />
+          <div>전체일기: {data.length}</div>
+          <div>기분 좋은 일기 개수: {goodCount}</div>
+          <div>기분이 나쁜 일기 개수: {badCount}</div>
+          <div>기분이 좋은 일기 비율: {goodRatio}</div>
+          <DiaryList />
+        </div>
+      </DiaryDispatchContext.Provider>
+    </DiaryStateContext.Provider>
   );
 };
 export default App;

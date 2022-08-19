@@ -1,49 +1,44 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { memo, useContext, useEffect, useRef, useState } from "react";
+import { DiaryDispatchContext } from "./App";
 
-const DiaryItem = ({
-  onModify,
-  onRemove,
-  id,
-  author,
-  content,
-  emotion,
-  created_date,
-}) => {
+const DiaryItem = ({ id, author, content, emotion, created_date }) => {
+  const { onRemove, onEdit } = useContext(DiaryDispatchContext);
+
   useEffect(() => {
-    console.log(`${id}번째 아이템 렌더!`);
+    console.log(`${id}번 일기아이템 렌더`);
   });
-  const [isModify, setModify] = useState(false);
-  const [localContent, setLocalContent] = useState(content);
-  const localContentInput = useRef();
 
-  const toggleModify = () => {
-    setModify(!isModify);
-  };
-  const handleRemove = () => {
-    if (window.confirm(`${id + 1}번째 일기를 정말 삭제하시겠습니까?`)) {
+  const [isModify, setModify] = useState(false);
+  const toggleIsEditNow = () => setModify(!isModify);
+
+  const [localContent, setLoclContent] = useState(content);
+  const localContentRef = useRef(null);
+
+  const handleClickDelete = () => {
+    if (window.confirm(`${id}번 째 일기를 삭제하시겠습니까?`)) {
       onRemove(id);
     }
   };
 
-  const handleQuitModify = () => {
-    setModify(false);
-    setLocalContent(content);
-  };
-
-  const handleModify = () => {
-    if (localContent.length < 5) {
-      localContentInput.current.focus();
+  const handleClickEdit = () => {
+    if (localContent.length < 1) {
+      localContentRef.current.focus();
       return;
     }
 
-    if (window.confirm(`${id + 1}번째 일기를 수정할꺼여?`)) {
-      onModify(id, localContent);
-      toggleModify();
+    if (window.confirm(`${id}번 째 일기를 수정하시겠습니까?`)) {
+      onEdit(id, localContent);
+      toggleIsEditNow();
     }
   };
 
+  const handleQuitEdit = () => {
+    setLoclContent(content);
+    toggleIsEditNow();
+  };
+
   return (
-    <div className="DiaryItem">
+    <div className="DiaryItem_container">
       <div className="info">
         <span className="author_info">
           | 작성자 : {author} | 감정점수 : {emotion} |
@@ -51,34 +46,31 @@ const DiaryItem = ({
         <br />
         <span className="date">{new Date(created_date).toLocaleString()}</span>
       </div>
+
       <div className="content">
         {isModify ? (
-          <>
-            <textarea
-              ref={localContentInput}
-              value={localContent}
-              onChange={(e) => setLocalContent(e.target.value)}
-            />
-          </>
+          <textarea
+            ref={localContentRef}
+            value={localContent}
+            onChange={(e) => setLoclContent(e.target.value)}
+          />
         ) : (
-          <>{content}</>
+          content
         )}
       </div>
       {isModify ? (
-        <>
-          <button onClick={handleQuitModify}>👑Modify Cancel👑</button>
-
-          <button onClick={handleModify}>💩Modify Compleated💩</button>
-        </>
+        <div>
+          <button onClick={handleQuitEdit}>😂Cancel Modify😂</button>
+          <button onClick={handleClickEdit}>🤠Save🤠</button>
+        </div>
       ) : (
-        <>
-          <button onClick={handleRemove}>👑Erase👑</button>
-
-          <button onClick={toggleModify}>💩Modify💩</button>
-        </>
+        <div>
+          <button onClick={handleClickDelete}>😡Delete😡</button>
+          <button onClick={toggleIsEditNow}>🤫Modify🤫</button>
+        </div>
       )}
     </div>
   );
 };
 
-export default React.memo(DiaryItem);
+export default memo(DiaryItem);
